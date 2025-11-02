@@ -2,31 +2,27 @@
 import datetime
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-import os
 from typing import Optional
-
-# TODO: Move this to environment variables for production security
-# For now, using your existing connection string
-# In production, use: MONGODB_URL = os.getenv("MONGODB_URL")
-MONGODB_URL = "mongodb+srv://usamamujeeb:usama4528@cluster0.lmtb6a8.mongodb.net/Learning?retryWrites=true&w=majority&appName=Cluster0"
-DATABASE_NAME = "Learning"  # TODO: Move to environment variables
+from app.core.config import settings
 
 # Global MongoDB client
 client: Optional[MongoClient] = None
 database = None
 
 def connect_to_mongo():
-    """Initialize MongoDB connection"""
+    """Initialize MongoDB connection using environment variables"""
     global client, database
     try:
-        client = MongoClient(MONGODB_URL)
-        database = client[DATABASE_NAME]
+        print(f"🔌 Connecting to MongoDB: {settings.database_name}")
+        client = MongoClient(settings.mongodb_url)
+        database = client[settings.database_name]
         # Test the connection
         client.admin.command('ping')
-        print("✅ Connected to MongoDB successfully!")
+        print(f"✅ Connected to MongoDB successfully! Database: {settings.database_name}")
         return database
     except Exception as e:
         print(f"❌ Failed to connect to MongoDB: {e}")
+        print(f"🔍 Check your .env file and MongoDB Atlas network access")
         raise
 
 def get_database():
@@ -35,6 +31,11 @@ def get_database():
     if database is None:
         database = connect_to_mongo()
     return database
+
+def get_collection(collection_name: str):
+    """Get a specific collection from the database"""
+    db = get_database()
+    return db[collection_name]
 
 def close_connection():
     """Close MongoDB connection"""
