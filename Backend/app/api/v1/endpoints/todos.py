@@ -1,117 +1,137 @@
-# Todo API endpoints - organized from your existing main.py code
+# Todo API endpoints with MongoDB CRUD operations
 from bson import ObjectId
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 
-# Import your schemas
+# Import schemas and CRUD operations
 from app.schemas.todo import TodoCreate, TodoUpdate, TodoResponse, PriorityLevel, TodoStatus
-
-# TODO: Replace this with database operations when you integrate MongoDB
-# For now, using string IDs (simulating MongoDB ObjectIds) for learning
-all_todos = [
-    TodoResponse(id="507f1f77bcf86cd799439011", todo_name='Sports', todo_description='Go to the gym', priority=PriorityLevel.HIGH, status=TodoStatus.NOT_STARTED),
-    TodoResponse(id="507f1f77bcf86cd799439012", todo_name='Study', todo_description='Read FastAPI documentation', priority=PriorityLevel.MEDIUM, status=TodoStatus.IN_PROGRESS),
-    TodoResponse(id="507f1f77bcf86cd799439013", todo_name='Grocery', todo_description='Buy vegetables and fruits', priority=PriorityLevel.LOW, status=TodoStatus.NOT_STARTED),
-    TodoResponse(id="507f1f77bcf86cd799439014", todo_name='Work', todo_description='Finish the project report', priority=PriorityLevel.HIGH, status=TodoStatus.NOT_STARTED),
-    TodoResponse(id="507f1f77bcf86cd799439015", todo_name='Relax', todo_description='Watch a movie', priority=PriorityLevel.MEDIUM, status=TodoStatus.COMPLETED),
-    TodoResponse(id="507f1f77bcf86cd799439016", todo_name='Travel', todo_description='Plan a weekend trip', priority=PriorityLevel.LOW, status=TodoStatus.NOT_STARTED),
-    TodoResponse(id="507f1f77bcf86cd799439017", todo_name='Cooking', todo_description='Try a new recipe', priority=PriorityLevel.LOW, status=TodoStatus.NOT_STARTED),
-    TodoResponse(id="507f1f77bcf86cd799439018", todo_name='Reading', todo_description='Read a new book', priority=PriorityLevel.LOW, status=TodoStatus.NOT_STARTED),
-    TodoResponse(id="507f1f77bcf86cd799439019", todo_name='Cleaning', todo_description='Clean the house', priority=PriorityLevel.LOW, status=TodoStatus.NOT_STARTED),
-    TodoResponse(id="507f1f77bcf86cd79943901a", todo_name='Meditation', todo_description='Practice mindfulness', priority=PriorityLevel.LOW, status=TodoStatus.NOT_STARTED),
-]
+from app.crud.todo import todo_crud
 
 router = APIRouter()
 
 
 @router.get('/', response_model=List[TodoResponse])
-def get_todos(firstn: Optional[int] = None):
+async def get_todos(
+    limit: int = Query(100, description="Maximum number of todos to return"),
+    skip: int = Query(0, description="Number of todos to skip"),
+    status: Optional[TodoStatus] = Query(None, description="Filter by status"),
+    priority: Optional[PriorityLevel] = Query(None, description="Filter by priority")
+):
     """
-    Get all todos or first N todos
+    Get all todos with optional filtering and pagination
     
-    - **firstn**: Optional parameter to limit number of todos returned
+    - **limit**: Maximum number of todos to return (default: 100)
+    - **skip**: Number of todos to skip for pagination (default: 0)
+    - **status**: Filter todos by status (optional)
+    - **priority**: Filter todos by priority (optional)
     """
-    if firstn:
-        return all_todos[:firstn]
-    return all_todos
+    try:
+        todos = await todo_crud.get_todos(
+            skip=skip,
+            limit=limit,
+            status_filter=status,
+            priority_filter=priority
+        )
+        
+        # Convert TodoModel to TodoResponse format
+        response_todos = []
+        for todo in todos:
+            response_data = todo.to_response_dict()
+            response_todos.append(TodoResponse(**response_data))
+        
+        return response_todos
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch todos: {str(e)}")
 
 
 @router.get('/{todo_id}', response_model=TodoResponse)
-def get_todo(todo_id: ObjectId):
+async def get_todo(todo_id: str):
     """
     Get a specific todo by ID
     
     - **todo_id**: The ID of the todo to retrieve (MongoDB ObjectId string)
     """
-    for todo in all_todos:
-        if todo.id == todo_id:
-            return todo
-
-    raise HTTPException(status_code=404, detail="Todo not found")
+    try:
+        todo = await todo_crud.get_todo(todo_id)
+        if not todo:
+            raise HTTPException(status_code=404, detail="Todo not found")
+        
+        # Convert TodoModel to TodoResponse format
+        response_data = todo.to_response_dict()
+        return TodoResponse(**response_data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch todo: {str(e)}")
 
 
 @router.post('/', response_model=TodoResponse)
-def create_todo(todo: TodoCreate):
+async def create_todo(todo: TodoCreate):
     """
     Create a new todo
     
-    - **todo**: Todo data (only name and description required)
-    - **priority**: Optional - defaults to LOW if not provided
-    - **status**: Optional - defaults to NOT_STARTED if not provided
+    - **todo**: Todo data with name and description required, priority and status optional
+    - **priority**: Defaults to LOW if not provided
+    - **status**: Defaults to NOT_STARTED if not provided
     """
-    # Generate a new ObjectId-like string (in real MongoDB, this would be generated automatically)
-    import time
-    new_todo_id = f"507f1f77bcf86cd{int(time.time()):x}"[:24]
-
-    # Set defaults for optional fields
-    priority = todo.priority if todo.priority is not None else PriorityLevel.LOW
-    status = todo.status if todo.status is not None else TodoStatus.NOT_STARTED
-
-    new_todo = TodoResponse(
-        id=new_todo_id,
-        todo_name=todo.todo_name,
-        todo_description=todo.todo_description,
-        priority=priority,
-        status=status
-    )
-
-    all_todos.append(new_todo)
-    return new_todo
+    try:
+        created_todo = await todo_crud.create_todo(todo)
+        
+        # Convert TodoModel to TodoResponse format
+        response_data = created_todo.to_response_dict()
+        return TodoResponse(**response_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create todo: {str(e)}")
 
 
 @router.put('/{todo_id}', response_model=TodoResponse)
-def update_todo(todo_id: ObjectId, updated_todo: TodoUpdate):
+async def update_todo(todo_id: str, todo_update: TodoUpdate):
     """
     Update an existing todo
     
     - **todo_id**: The ID of the todo to update (MongoDB ObjectId string)
-    - **updated_todo**: Updated todo data (all fields optional)
+    - **todo_update**: Updated todo data (all fields optional)
     """
-    for todo in all_todos:
-        if todo.id == todo_id:
-            if updated_todo.todo_name is not None:
-                todo.todo_name = updated_todo.todo_name
-            if updated_todo.todo_description is not None:
-                todo.todo_description = updated_todo.todo_description
-            if updated_todo.priority is not None:
-                todo.priority = updated_todo.priority
-            if updated_todo.status is not None:
-                todo.status = updated_todo.status
-            return todo
+    try:
+        updated_todo = await todo_crud.update_todo(todo_id, todo_update)
+        if not updated_todo:
+            raise HTTPException(status_code=404, detail="Todo not found")
         
-    raise HTTPException(status_code=404, detail="Todo not found")
+        # Convert TodoModel to TodoResponse format
+        response_data = updated_todo.to_response_dict()
+        return TodoResponse(**response_data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update todo: {str(e)}")
 
 
-@router.delete('/{todo_id}', response_model=TodoResponse)
-def delete_todo(todo_id: ObjectId):
+@router.delete('/{todo_id}')
+async def delete_todo(todo_id: str):
     """
     Delete a todo by ID
     
     - **todo_id**: The ID of the todo to delete (MongoDB ObjectId string)
     """
-    for index, todo in enumerate(all_todos):
-        if todo.id == todo_id:
-            deleted_todo = all_todos.pop(index)
-            return deleted_todo
+    try:
+        deleted = await todo_crud.delete_todo(todo_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Todo not found")
+        
+        return {"message": "Todo deleted successfully", "deleted_id": todo_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete todo: {str(e)}")
 
-    raise HTTPException(status_code=404, detail="Todo not found")
+
+@router.get('/stats/count')
+async def get_todos_count():
+    """
+    Get the total count of todos
+    """
+    try:
+        count = await todo_crud.get_todos_count()
+        return {"total_todos": count}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get todos count: {str(e)}")
