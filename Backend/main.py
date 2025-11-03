@@ -56,14 +56,19 @@ async def root():
         "version": "1.0.0",
         "environment": settings.environment,
         "docs": "/docs",
-        "health": {
-            "status": "healthy",
-            "app": settings.app_name,
-            "version": settings.app_version,
-            "environment": settings.environments
-        },
         "endpoints": {
             "authentication": "/api/v1/auth",
             "todos": "/api/v1/todos",
+            "health": "/health"
         }
+    }
+
+@app.get("/health")
+async def health():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "app": settings.app_name,
+        "version": settings.app_version,
+        "environment": settings.environment
     }
