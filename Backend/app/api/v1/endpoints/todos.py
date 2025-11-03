@@ -7,7 +7,7 @@ from typing import List, Optional
 from app.schemas.todo import TodoCreate, TodoUpdate, TodoResponse, PriorityLevel, TodoStatus
 from app.schemas.user import UserResponse
 from app.crud.todo import todo_crud
-from app.api.v1.endpoints.auth import get_current_user
+from app.utils.auth import get_current_user
 
 router = APIRouter()
 

@@ -2,7 +2,7 @@
 from datetime import timedelta
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
-from Backend.app.utils.auth import get_current_user
+from app.utils.auth import get_current_user
 from app.schemas.user import UserCreate, UserResponse, UserLogin, Token
 from app.crud.user import user_crud
 from app.core.security import create_access_token
