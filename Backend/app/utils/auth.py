@@ -7,7 +7,7 @@ from app.core.security import decode_access_token
 from app.core.config import settings
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.api_v1_str}/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.api_v1_str}/auth/token")
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserResponse:
     """Get current user from JWT token"""
