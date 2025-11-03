@@ -1,11 +1,13 @@
-# Todo API endpoints with MongoDB CRUD operations
+# Todo API endpoints with MongoDB CRUD operations and authentication
 from bson import ObjectId
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Optional
 
 # Import schemas and CRUD operations
 from app.schemas.todo import TodoCreate, TodoUpdate, TodoResponse, PriorityLevel, TodoStatus
+from app.schemas.user import UserResponse
 from app.crud.todo import todo_crud
+from app.api.v1.endpoints.auth import get_current_user
 
 router = APIRouter()
 
@@ -15,18 +17,22 @@ async def get_todos(
     limit: int = Query(100, description="Maximum number of todos to return"),
     skip: int = Query(0, description="Number of todos to skip"),
     status: Optional[TodoStatus] = Query(None, description="Filter by status"),
-    priority: Optional[PriorityLevel] = Query(None, description="Filter by priority")
+    priority: Optional[PriorityLevel] = Query(None, description="Filter by priority"),
+    current_user: UserResponse = Depends(get_current_user)
 ):
     """
-    Get all todos with optional filtering and pagination
+    Get all todos for the current authenticated user with optional filtering and pagination
     
     - **limit**: Maximum number of todos to return (default: 100)
     - **skip**: Number of todos to skip for pagination (default: 0)
     - **status**: Filter todos by status (optional)
     - **priority**: Filter todos by priority (optional)
+    
+    Requires Authentication: Bearer token in Authorization header
     """
     try:
         todos = await todo_crud.get_todos(
+            user_id=current_user.id,
             skip=skip,
             limit=limit,
             status_filter=status,
@@ -45,14 +51,16 @@ async def get_todos(
 
 
 @router.get('/{todo_id}', response_model=TodoResponse)
-async def get_todo(todo_id: str):
+async def get_todo(todo_id: str, current_user: UserResponse = Depends(get_current_user)):
     """
-    Get a specific todo by ID
+    Get a specific todo by ID (only returns todos owned by the current user)
     
     - **todo_id**: The ID of the todo to retrieve (MongoDB ObjectId string)
+    
+    Requires Authentication: Bearer token in Authorization header
     """
     try:
-        todo = await todo_crud.get_todo(todo_id)
+        todo = await todo_crud.get_todo(todo_id, current_user.id)
         if not todo:
             raise HTTPException(status_code=404, detail="Todo not found")
         
@@ -66,16 +74,18 @@ async def get_todo(todo_id: str):
 
 
 @router.post('/', response_model=TodoResponse)
-async def create_todo(todo: TodoCreate):
+async def create_todo(todo: TodoCreate, current_user: UserResponse = Depends(get_current_user)):
     """
-    Create a new todo
+    Create a new todo for the current authenticated user
     
     - **todo**: Todo data with name and description required, priority and status optional
     - **priority**: Defaults to LOW if not provided
     - **status**: Defaults to NOT_STARTED if not provided
+    
+    Requires Authentication: Bearer token in Authorization header
     """
     try:
-        created_todo = await todo_crud.create_todo(todo)
+        created_todo = await todo_crud.create_todo(todo, current_user.id)
         
         # Convert TodoModel to TodoResponse format
         response_data = created_todo.to_response_dict()
@@ -85,15 +95,21 @@ async def create_todo(todo: TodoCreate):
 
 
 @router.put('/{todo_id}', response_model=TodoResponse)
-async def update_todo(todo_id: str, todo_update: TodoUpdate):
+async def update_todo(
+    todo_id: str, 
+    todo_update: TodoUpdate, 
+    current_user: UserResponse = Depends(get_current_user)
+):
     """
-    Update an existing todo
+    Update an existing todo (only for todos owned by the current user)
     
     - **todo_id**: The ID of the todo to update (MongoDB ObjectId string)
     - **todo_update**: Updated todo data (all fields optional)
+    
+    Requires Authentication: Bearer token in Authorization header
     """
     try:
-        updated_todo = await todo_crud.update_todo(todo_id, todo_update)
+        updated_todo = await todo_crud.update_todo(todo_id, todo_update, current_user.id)
         if not updated_todo:
             raise HTTPException(status_code=404, detail="Todo not found")
         
@@ -107,14 +123,16 @@ async def update_todo(todo_id: str, todo_update: TodoUpdate):
 
 
 @router.delete('/{todo_id}')
-async def delete_todo(todo_id: str):
+async def delete_todo(todo_id: str, current_user: UserResponse = Depends(get_current_user)):
     """
-    Delete a todo by ID
+    Delete a todo by ID (only for todos owned by the current user)
     
     - **todo_id**: The ID of the todo to delete (MongoDB ObjectId string)
+    
+    Requires Authentication: Bearer token in Authorization header
     """
     try:
-        deleted = await todo_crud.delete_todo(todo_id)
+        deleted = await todo_crud.delete_todo(todo_id, current_user.id)
         if not deleted:
             raise HTTPException(status_code=404, detail="Todo not found")
         
@@ -123,15 +141,21 @@ async def delete_todo(todo_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete todo: {str(e)}")
-
+    
 
 @router.get('/stats/count')
-async def get_todos_count():
+async def get_todos_count(current_user: UserResponse = Depends(get_current_user)):
     """
-    Get the total count of todos
+    Get the total count of todos for the current authenticated user
+    
+    Requires Authentication: Bearer token in Authorization header
     """
     try:
-        count = await todo_crud.get_todos_count()
-        return {"total_todos": count}
+        count = await todo_crud.get_todos_count(current_user.id)
+        return {
+            "total_todos": count,
+            "user_id": current_user.id,
+            "username": current_user.username
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get todos count: {str(e)}")
