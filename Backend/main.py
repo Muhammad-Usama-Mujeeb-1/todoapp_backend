@@ -1,8 +1,30 @@
 # Main FastAPI application - organized structure
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
 from app.api.v1.api import api_router
+from app.core.database import connect_to_mongo, close_connection
+from app.core.config import settings
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager - handles startup/shutdown events"""
+    # Startup
+    print("🚀 Starting TodoApp API...")
+    try:
+        # Connect to MongoDB
+        connect_to_mongo()
+        print("✅ Database connected successfully")
+    except Exception as e:
+        print(f"❌ Database connection failed: {e}")
+    
+    yield  # Application runs here
+    
+    # Shutdown
+    print("🛑 Shutting down TodoApp API...")
+    close_connection()
+    print("📴 Database connection closed")
 
 # Create FastAPI app instance
 app = FastAPI(
@@ -10,15 +32,15 @@ app = FastAPI(
     description="A TodoApp backend built with FastAPI, MongoDB, and JWT authentication",
     version="1.0.0",
     docs_url="/docs",  # Swagger UI
-    redoc_url="/redoc"  # ReDoc
+    lifespan=lifespan
 )
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify allowed origins
+    allow_origins=settings.backend_cors_origins,  # Use configured origins
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -32,16 +54,16 @@ async def root():
     return {
         "message": "Welcome to TodoApp API", 
         "version": "1.0.0",
-        "docs": "/docs"
+        "environment": settings.environment,
+        "docs": "/docs",
+        "health": {
+            "status": "healthy",
+            "app": settings.app_name,
+            "version": settings.app_version,
+            "environment": settings.environments
+        },
+        "endpoints": {
+            "authentication": "/api/v1/auth",
+            "todos": "/api/v1/todos",
+        }
     }
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy"}
-
-# Your original API logic is now organized in:
-# - Schemas: app/schemas/todo.py
-# - API Routes: app/api/v1/endpoints/todos.py
-# - Database Models: app/models/todo.py (for MongoDB integration)
-# - CRUD Operations: app/crud/todo.py (for MongoDB operations)
