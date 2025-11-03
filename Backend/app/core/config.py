@@ -1,6 +1,11 @@
 # Application configuration settings
+import os
+from pathlib import Path
 from typing import List
 from pydantic_settings import BaseSettings
+
+# Get the project root directory (Backend folder)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 class Settings(BaseSettings):
     # 🎯 Application Info
@@ -23,7 +28,7 @@ class Settings(BaseSettings):
     backend_cors_origins: List[str] = ["http://localhost:3000", "http://localhost:8000", "http://localhost:8080"]
     
     class Config:
-        env_file = ".env"
+        env_file = BASE_DIR / ".env" # Joining path to load environment variables from .env file
         case_sensitive = False
 
 # 🎯 Global settings instance
