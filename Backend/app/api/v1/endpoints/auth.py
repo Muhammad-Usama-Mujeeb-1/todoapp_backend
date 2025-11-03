@@ -1,49 +1,112 @@
 # Authentication endpoints (JWT login, register, etc.)
-from fastapi import APIRouter
+from datetime import timedelta
+from typing import Any
+from fastapi import APIRouter, Depends, HTTPException, status
+from Backend.app.utils.auth import get_current_user
+from app.schemas.user import UserCreate, UserResponse, UserLogin, Token
+from app.crud.user import user_crud
+from app.core.security import create_access_token
+from app.core.config import settings
 
-# TODO: Add your authentication endpoints here
-# Example structure:
-
-# from fastapi import APIRouter, Depends, HTTPException, status
-# from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-# from app.schemas.user import UserCreate, UserResponse, Token
-# from app.crud.user import user_crud
-# from app.core.security import create_access_token, verify_password
-#
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-#
-# @router.post("/register", response_model=UserResponse)
-# async def register_user(user: UserCreate):
-#     """Register a new user"""
-#     # Implementation here
-#     pass
-#
-# @router.post("/login", response_model=Token)
-# async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-#     """Login user and return access token"""
-#     # Implementation here
-#     pass
-#
-# @router.get("/me", response_model=UserResponse)
-# async def read_users_me(token: str = Depends(oauth2_scheme)):
-#     """Get current user information"""
-#     # Implementation here
-#     pass
 
 router = APIRouter()
 
-# Placeholder endpoints - implement these when you add authentication
-@router.post("/register")
-async def register_user():
-    """Register a new user - TODO: Implement with JWT"""
-    return {"message": "User registration endpoint - implement with JWT"}
+@router.post("/register", response_model=UserResponse)
+async def register_user(user: UserCreate):
+    """
+    Register a new user
+    
+    - **email**: Valid email address (must be unique)
+    - **username**: Username 3-50 characters (must be unique)
+    - **password**: Password minimum 8 characters
+    - **full_name**: Optional full name
+    """
+    try:
+        # Create new user
+        created_user = await user_crud.create_user(user)
+        
+        # Convert to response format
+        response_data = created_user.to_response_dict()
+        return UserResponse(**response_data)
+        
+    except ValueError as e:
+        # Handle duplicate email/username
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create user: {str(e)}"
+        )
 
-@router.post("/login")
-async def login_user():
-    """Login user - TODO: Implement with JWT"""
-    return {"message": "User login endpoint - implement with JWT"}
 
-@router.get("/me")
-async def get_current_user():
-    """Get current user - TODO: Implement with JWT"""
-    return {"message": "Current user endpoint - implement with JWT"}
+@router.post("/login", response_model=Token)
+async def login_for_access_token(user_credentials: UserLogin):
+    """
+    Login user and return JWT access token
+    
+    - **email_or_username**: Email address or username
+    - **password**: User password
+    
+    Returns JWT token for authenticated requests
+    """
+    try:
+        # Authenticate user
+        user = await user_crud.authenticate_user(
+            user_credentials.email_or_username, 
+            user_credentials.password
+        )
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email/username or password",
+                # headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Create access token
+        access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+        access_token = create_access_token(str(user._id), expires_delta=access_token_expires )
+        
+        return Token(
+            access_token=access_token,
+            token_type="bearer",
+            expires_in=settings.access_token_expire_minutes * 60  # Convert to seconds
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Login failed: {str(e)}"
+        )
+
+
+
+@router.get("/get_current_user", response_model=UserResponse)
+async def read_users_me(current_user: UserResponse = Depends(get_current_user)):
+    """
+    Get current authenticated user information
+    
+    Requires valid JWT token in Authorization header:
+    Authorization: Bearer <your-jwt-token>
+    """
+    return current_user
+
+
+@router.get("/verify-token")
+async def verify_token(current_user: UserResponse = Depends(get_current_user)):
+    """
+    Verify if JWT token is valid and not expired
+    
+    Returns user information if token is valid
+    """
+    return {
+        "valid": True,
+        "user_id": current_user.id,
+        "username": current_user.username,
+        "email": current_user.email
+    }
