@@ -6,7 +6,7 @@
 echo "🚀 Setting up TodoApp Backend..."
 
 # Navigate to the backend directory
-cd /home/emumba/Emumba/projects-work/Frontend/Learning/TodoApp/Backend
+cd /home/emumba/Emumba/projects-work/Frontend/Learning/TodoApp/todo_backend_app
 
 # Check if system has python3-venv
 if ! python3 -c "import venv" &> /dev/null; then
@@ -136,7 +136,7 @@ if [ "$START_SERVER" = true ]; then
     echo ""
     
     # Start the server with proper environment
-    export PYTHONPATH="/home/emumba/Emumba/projects-work/Frontend/Learning/TodoApp/Backend:$PYTHONPATH"
+    export PYTHONPATH="/home/emumba/Emumba/projects-work/Frontend/Learning/TodoApp/todo_backend_app:$PYTHONPATH"
     
     # Try uvicorn with python module approach
     echo "🔧 Starting server..."
