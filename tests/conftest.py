@@ -2,6 +2,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from main import app
+from app.schemas.todo import PriorityLevel
 
 @pytest.fixture
 def client():
@@ -14,5 +15,5 @@ def sample_todo():
     return {
         "name": "Test Todo",
         "description": "This is a test todo",
-        "priority": 1
+        "priority": PriorityLevel.LOW.value
     }

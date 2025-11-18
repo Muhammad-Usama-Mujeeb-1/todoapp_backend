@@ -253,7 +253,7 @@ Your existing code has been organized into a proper structure. The API endpoints
      -d '{
        "name": "Learn Backend Development",
        "description": "Master FastAPI and MongoDB",
-       "priority": 1
+       "priority": "HIGH"
      }'
    ```
 

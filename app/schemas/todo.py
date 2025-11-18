@@ -3,18 +3,17 @@ from enum import IntEnum, Enum
 from pydantic import BaseModel, Field
 
 
-class PriorityLevel(IntEnum):
+class PriorityLevel(str, Enum):
     """Priority levels for todos"""
-    HIGH = 1
-    MEDIUM = 2
-    LOW = 3
-
+    HIGH = 'HIGH'
+    MEDIUM = 'MEDIUM'
+    LOW = 'LOW'
 
 class TodoStatus(str, Enum):
     """Status levels for todos"""
-    NOT_STARTED = 'not_started'
-    IN_PROGRESS = 'in_progress'
-    COMPLETED = 'completed'
+    NOT_STARTED = 'NOT_STARTED'
+    IN_PROGRESS = 'IN_PROGRESS'
+    COMPLETED = 'COMPLETED'
 
 
 class TodoBase(BaseModel):
@@ -33,7 +32,7 @@ class TodoBase(BaseModel):
     priority: PriorityLevel = Field(
         PriorityLevel.LOW, 
         description="Priority level of the todo", 
-        example=3
+        example=PriorityLevel.HIGH
     )
     status: TodoStatus = Field(
         TodoStatus.NOT_STARTED, 
@@ -63,7 +62,7 @@ class TodoUpdate(BaseModel):
     priority: Optional[PriorityLevel] = Field(
         None, 
         description="Priority level of the todo", 
-        example=1
+        example=PriorityLevel.MEDIUM
     )
     status: Optional[TodoStatus] = Field(
         None, 
