@@ -19,13 +19,13 @@ class TodoStatus(str, Enum):
 
 class TodoBase(BaseModel):
     """Base schema for Todo with common fields"""
-    todo_name: str = Field(
+    name: str = Field(
         ...,
         min_length=3, 
         description="Name of the todo",
         example="Learn FastAPI"
     )
-    todo_description: str = Field(
+    description: str = Field(
         ...,
         description="Description of the todo", 
         example="Study FastAPI documentation and build a todo app"
@@ -49,13 +49,13 @@ class TodoCreate(TodoBase):
 
 class TodoUpdate(BaseModel):
     """Schema for updating an existing todo"""
-    todo_name: Optional[str] = Field(
+    name: Optional[str] = Field(
         None, 
         min_length=3, 
         description="Name of the todo", 
         example="Grocery Shopping"
     )
-    todo_description: Optional[str] = Field(
+    description: Optional[str] = Field(
         None, 
         description="Description of the todo", 
         example="Buy vegetables and fruits"

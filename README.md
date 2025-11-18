@@ -251,8 +251,8 @@ Your existing code has been organized into a proper structure. The API endpoints
    curl -X POST http://localhost:8000/api/v1/todos/ \
      -H "Content-Type: application/json" \
      -d '{
-       "todo_name": "Learn Backend Development",
-       "todo_description": "Master FastAPI and MongoDB",
+       "name": "Learn Backend Development",
+       "description": "Master FastAPI and MongoDB",
        "priority": 1
      }'
    ```

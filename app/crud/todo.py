@@ -18,8 +18,8 @@ class TodoCRUD:
             
             # Create TodoModel instance
             new_todo = TodoModel(
-                todo_name=todo.todo_name,
-                todo_description=todo.todo_description,
+                name=todo.name,
+                description=todo.description,
                 priority=todo.priority,
                 status=todo.status,
                 user_id=user_id
@@ -103,10 +103,10 @@ class TodoCRUD:
             # Build update data - only include fields that are not None
             update_data = {"updated_at": datetime.utcnow()}
             
-            if todo_update.todo_name is not None:
-                update_data["todo_name"] = todo_update.todo_name
-            if todo_update.todo_description is not None:
-                update_data["todo_description"] = todo_update.todo_description
+            if todo_update.name is not None:
+                update_data["name"] = todo_update.name
+            if todo_update.description is not None:
+                update_data["description"] = todo_update.description
             if todo_update.priority is not None:
                 update_data["priority"] = todo_update.priority.value
             if todo_update.status is not None:

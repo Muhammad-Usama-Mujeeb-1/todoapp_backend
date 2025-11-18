@@ -9,8 +9,8 @@ class TodoModel:
     
     def __init__(
         self,
-        todo_name: str,
-        todo_description: str,
+        name: str,
+        description: str,
         priority: PriorityLevel = PriorityLevel.LOW,
         status: TodoStatus = TodoStatus.NOT_STARTED,
         user_id: str = "default_user",  # For now, until auth is implemented
@@ -19,8 +19,8 @@ class TodoModel:
         updated_at: Optional[datetime] = None
     ):
         self._id = _id or ObjectId()
-        self.todo_name = todo_name
-        self.todo_description = todo_description
+        self.name = name
+        self.description = description
         self.priority = priority
         self.status = status
         self.user_id = user_id
@@ -31,8 +31,8 @@ class TodoModel:
         """Convert to dictionary for MongoDB storage"""
         return {
             "_id": self._id,
-            "todo_name": self.todo_name,
-            "todo_description": self.todo_description,
+            "name": self.name,
+            "description": self.description,
             "priority": self.priority.value,
             "status": self.status.value,
             "user_id": self.user_id,
@@ -45,8 +45,8 @@ class TodoModel:
         """Create TodoModel instance from MongoDB document"""
         return cls(
             _id=doc.get("_id"),
-            todo_name=doc["todo_name"],
-            todo_description=doc["todo_description"],
+            name=doc["name"],
+            description=doc["description"],
             priority=PriorityLevel(doc.get("priority", PriorityLevel.LOW.value)),
             status=TodoStatus(doc.get("status", TodoStatus.NOT_STARTED.value)),
             user_id=doc.get("user_id", "default_user"),
@@ -58,8 +58,8 @@ class TodoModel:
         """Convert to dictionary for API responses"""
         return {
             "id": str(self._id),
-            "todo_name": self.todo_name,
-            "todo_description": self.todo_description,
+            "name": self.name,
+            "description": self.description,
             "priority": self.priority,
             "status": self.status,
             "created_at": self.created_at,

@@ -12,7 +12,7 @@ def client():
 def sample_todo():
     """Sample todo data for testing"""
     return {
-        "todo_name": "Test Todo",
-        "todo_description": "This is a test todo",
+        "name": "Test Todo",
+        "description": "This is a test todo",
         "priority": 1
     }

@@ -12,7 +12,7 @@
 #     """Test creating a todo"""
 #     response = client.post("/api/v1/todos/", json=sample_todo)
 #     assert response.status_code == 200
-#     assert response.json()["todo_name"] == sample_todo["todo_name"]
+#     assert response.json()["name"] == sample_todo["name"]
 #
 # def test_get_todo_by_id(client):
 #     """Test getting todo by ID"""
@@ -21,7 +21,7 @@
 #
 # def test_update_todo(client):
 #     """Test updating a todo"""
-#     update_data = {"todo_name": "Updated Todo"}
+#     update_data = {"name": "Updated Todo"}
 #     response = client.put("/api/v1/todos/1", json=update_data)
 #     assert response.status_code == 200
 #
