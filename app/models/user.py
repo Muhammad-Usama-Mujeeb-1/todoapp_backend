@@ -11,7 +11,7 @@ class UserModel:
         email: str,
         username: str,
         hashed_password: str,
-        full_name: Optional[str] = None,
+        fullname: Optional[str] = None,
         _id: Optional[ObjectId] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
@@ -20,7 +20,7 @@ class UserModel:
         self.email = email
         self.username = username
         self.hashed_password = hashed_password
-        self.full_name = full_name
+        self.fullname = fullname
         self.created_at = created_at or datetime.utcnow()
         self.updated_at = updated_at or datetime.utcnow()
 
@@ -31,7 +31,7 @@ class UserModel:
             "email": self.email,
             "username": self.username,
             "hashed_password": self.hashed_password,
-            "full_name": self.full_name,
+            "fullname": self.fullname,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
@@ -44,7 +44,7 @@ class UserModel:
             email=doc["email"],
             username=doc["username"],
             hashed_password=doc["hashed_password"],
-            full_name=doc.get("full_name"),
+            fullname=doc.get("fullname"),
             created_at=doc.get("created_at"),
             updated_at=doc.get("updated_at"),
         )
@@ -55,7 +55,7 @@ class UserModel:
             "id": str(self._id),
             "email": self.email,
             "username": self.username,
-            "full_name": self.full_name,
+            "fullname": self.fullname,
             "created_at": self.created_at,
             "updated_at": self.updated_at
         }

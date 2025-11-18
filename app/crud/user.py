@@ -37,7 +37,7 @@ class UserCRUD:
                 email=user.email,
                 username=user.username,
                 hashed_password=hashed_password,
-                full_name=user.full_name
+                fullname=user.fullname
             )
             
             # Insert into MongoDB
@@ -152,8 +152,8 @@ class UserCRUD:
                     raise ValueError("Username already taken by another user")
                 update_data["username"] = user_update.username
                 
-            if user_update.full_name is not None:
-                update_data["full_name"] = user_update.full_name
+            if user_update.fullname is not None:
+                update_data["fullname"] = user_update.fullname
             
             # Update the document
             result = collection.update_one(

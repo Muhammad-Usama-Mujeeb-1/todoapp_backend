@@ -20,7 +20,7 @@ async def register_user(user: UserCreate):
     - **email**: Valid email address (must be unique)
     - **username**: Username 3-50 characters (must be unique)
     - **password**: Password minimum 8 characters
-    - **full_name**: Optional full name
+    - **fullname**: Optional full name
     """
     try:
         # Create new user

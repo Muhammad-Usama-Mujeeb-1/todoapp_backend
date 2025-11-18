@@ -17,7 +17,7 @@ class UserBase(BaseModel):
         description="Username (unique)",
         example="johndoe"
     )
-    full_name: Optional[str] = Field(
+    fullname: Optional[str] = Field(
         None, 
         description="User's full name",
         example="John Doe"
@@ -38,7 +38,7 @@ class UserUpdate(BaseModel):
     """Schema for updating user information"""
     email: Optional[EmailStr] = Field(None, description="New email address")
     username: Optional[str] = Field(None, min_length=3, max_length=50)
-    full_name: Optional[str] = Field(None, description="New full name")
+    fullname: Optional[str] = Field(None, description="New full name")
 
 
 class UserResponse(UserBase):
