@@ -133,11 +133,6 @@ async def login_with_json(user_credentials: UserLogin):
             detail=f"Login failed: {str(e)}"
         )
 
-
-
-
-
-
 @router.get("/get_current_user", response_model=UserResponse)
 async def read_users_me(current_user: UserResponse = Depends(get_current_user)):
     """

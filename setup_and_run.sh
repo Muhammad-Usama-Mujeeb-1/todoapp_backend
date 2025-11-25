@@ -5,8 +5,21 @@
 
 echo "🚀 Setting up TodoApp Backend..."
 
+# Determine script directory for relative paths
+SCRIPT_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Parse arguments
+AUTO_START=false
+for arg in "$@"; do
+    case "$arg" in
+        --start|-s)
+            AUTO_START=true
+            ;;
+    esac
+done
+
 # Navigate to the backend directory
-cd /home/emumba/Emumba/projects-work/Frontend/Learning/TodoApp/todo_backend_app
+cd "$SCRIPT_DIR"
 
 # Check if system has python3-venv
 if ! python3 -c "import venv" &> /dev/null; then
@@ -108,23 +121,34 @@ if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null 2>&1; then
     echo "📖 API Documentation: http://localhost:8000/docs"
     echo "🔍 Health Check: http://localhost:8000/health"
     echo ""
-    read -p "🔄 Do you want to restart the server? (y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "🛑 Stopping existing server..."
+    if [ "$AUTO_START" = true ]; then
+        echo "🔄 Auto-restart enabled via flag. Restarting server..."
         pkill -f "uvicorn.*main:app" || true
         sleep 2
         START_SERVER=true
     else
-        START_SERVER=false
+        read -p "🔄 Do you want to restart the server? (y/n): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo "🛑 Stopping existing server..."
+            pkill -f "uvicorn.*main:app" || true
+            sleep 2
+            START_SERVER=true
+        else
+            START_SERVER=false
+        fi
     fi
 else
-    read -p "🚀 Do you want to start the server now? (y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [ "$AUTO_START" = true ]; then
         START_SERVER=true
     else
-        START_SERVER=false
+        read -p "🚀 Do you want to start the server now? (y/n): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            START_SERVER=true
+        else
+            START_SERVER=false
+        fi
     fi
 fi
 
@@ -136,7 +160,7 @@ if [ "$START_SERVER" = true ]; then
     echo ""
     
     # Start the server with proper environment
-    export PYTHONPATH="/home/emumba/Emumba/projects-work/Frontend/Learning/TodoApp/todo_backend_app:$PYTHONPATH"
+    export PYTHONPATH="${SCRIPT_DIR}:${PYTHONPATH:-}"
     
     # Try uvicorn with python module approach
     echo "🔧 Starting server..."
